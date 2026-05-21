@@ -1,11 +1,11 @@
 const canvas = document.getElementById("myCanvas");
 const c = canvas.getContext("2d");
 
-const fireworkTrailLength = 100
+const globalFireworkTrailLength = 100
 const colorKeyListBackup = [...colorKeyList]
 // check this out
 
-let showFirework = false;
+let showFirework = true;
 let showParticleFallingAnimation = true;
 
 var deathParticles = []
@@ -60,7 +60,7 @@ const inputHeight = input.length
 
 // frame for HAPPY FATHER'S DAY! is 171 (width) x 24 (height).
 
-let maximumArtHeight = 0.8
+let maximumArtHeight = 0.9
 let maximumArtWidth = 1.0
 
 let textFrameHeight;
@@ -80,7 +80,7 @@ const vertScale = window.innerHeight / defaultHeight
 const horizScale = window.innerWidth / defaultWidth
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-const fireworkSize = textFramePixelSize*9
+const globalFireworkSize = textFramePixelSize*6
 
 const frozenCanvas = document.createElement("canvas");
 frozenCanvas.width = canvas.width;
@@ -108,7 +108,7 @@ function determineDistXPos(rand) {
 }
 
 
-function explode(x, y, size, numParticles){
+function explode(x, y, size, numParticles, localFireworkSize){
     // console.log(potentialCoords)
     subDeathParticles = [];
     let radius = 5
@@ -225,7 +225,7 @@ function explode(x, y, size, numParticles){
             variationX: variationX,
             variationY: variationY,
             angle: ang,
-            size: fireworkSize/2,
+            size: globalFireworkSize / 2 * size,
             initGravity: initGravity,
             particleColor: colorName,
             colorID: colorID,
@@ -374,13 +374,15 @@ function drawDeathParticles(){
 }
 
 function initParticle(){
-    let randomX = Math.round(Math.random()*textFrameWidth)+textFrameLocX
-    let nParticles = 1000
-    let expSize = 1.25
+    let randomX = Math.round(Math.random()*(textFrameWidth*0.8))+textFrameLocX+(textFrameWidth*0.1)
+    let nParticles = 600 + (Math.random() * 600)
+    let expSize = nParticles / 700
+    let localFireworkSize = globalFireworkSize * expSize
+    let localTrailLength = globalFireworkTrailLength * Math.pow(expSize, 1.5)
     // let randomX = Math.round(Math.random()*window.innerWidth)+0
     if(Math.round(Math.random()) == 1){
         //default fireworks
-        nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: 0-((Math.random()*3)+4.5)*(window.innerHeight/defaultHeight), type: "default", trail: [], expSize: expSize, numParticles: nParticles})
+        nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: 0-((Math.random()*3)+4.5)*(window.innerHeight/defaultHeight), type: "default", trail: [], expSize: expSize, numParticles: nParticles, fireworkSize: localFireworkSize, fireworkTrailLength: localTrailLength})
     }else{
         //curvy fireworks
         
@@ -388,10 +390,10 @@ function initParticle(){
         let amplitude = ((Math.random()*40)+10)*(window.innerHeight/defaultHeight)
         let initGravity = 0-((Math.random()*4)+4)*(window.innerHeight/defaultHeight)
         let frequency = Math.round(Math.random()*6)+3
-        nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: initGravity, amplitude: amplitude, type: "curvy", loop: 0, referenceX: randomX, freq: frequency, trail: [], expSize: expSize, numParticles: nParticles})
+        nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: initGravity, amplitude: amplitude, type: "curvy", loop: 0, referenceX: randomX, freq: frequency, trail: [], expSize: expSize, numParticles: nParticles, fireworkSize: localFireworkSize, fireworkTrailLength: localTrailLength})
 
         if (Math.random() < 0.25) {
-            nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: initGravity, amplitude: 0-amplitude, type: "curvy", loop: 0, referenceX: randomX, freq: frequency, trail: [], expSize: expSize, numParticles: nParticles})
+            nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: initGravity, amplitude: 0-amplitude, type: "curvy", loop: 0, referenceX: randomX, freq: frequency, trail: [], expSize: expSize, numParticles: nParticles, fireworkSize: localFireworkSize, fireworkTrailLength: localTrailLength})
         }
     }
 }
@@ -415,13 +417,13 @@ function updateInitParticle(){
 
             // nonExplodedParticles[i].trail.push({x: nonExplodedParticles[i].x, y: nonExplodedParticles[i].y, transparency: 1, size: fireworkSize, color: colorKeyList[Math.floor(Math.random()*colorKeyList.length)] })
 
-            nonExplodedParticles[i].trail.push({x: nonExplodedParticles[i].x, y: nonExplodedParticles[i].y, transparency: 1, size: fireworkSize, color: "white" })
+            nonExplodedParticles[i].trail.push({x: nonExplodedParticles[i].x, y: nonExplodedParticles[i].y, transparency: 1, size: nonExplodedParticles[i].fireworkSize, color: "white" })
 
             let ind = 0
 
             while (ind < nonExplodedParticles[i].trail.length) {
-                nonExplodedParticles[i].trail[ind].transparency -= 1 / fireworkTrailLength
-                nonExplodedParticles[i].trail[ind].size -= fireworkSize / fireworkTrailLength
+                nonExplodedParticles[i].trail[ind].transparency -= 1 / nonExplodedParticles[i].fireworkTrailLength
+                nonExplodedParticles[i].trail[ind].size -= nonExplodedParticles[i].fireworkSize / nonExplodedParticles[i].fireworkTrailLength
 
                 if (nonExplodedParticles[i].trail[ind].transparency <= 0) {
                     nonExplodedParticles[i].trail.splice(ind, 1)
@@ -429,7 +431,7 @@ function updateInitParticle(){
                 ind++
             }
         }else{
-            explode(nonExplodedParticles[i].x, nonExplodedParticles[i].y, nonExplodedParticles[i].expSize, nonExplodedParticles[i].numParticles);
+            explode(nonExplodedParticles[i].x, nonExplodedParticles[i].y, nonExplodedParticles[i].expSize, nonExplodedParticles[i].numParticles, nonExplodedParticles[i].fireworkSize);
             nonExplodedParticles.splice(i, 1);
             i--;
         }
@@ -454,7 +456,7 @@ function drawInitParticle(){
         
         if (showFirework) {
             c.beginPath()
-            c.rect(nonExplodedParticles[i].x-(fireworkSize), nonExplodedParticles[i].y-(fireworkSize), fireworkSize*2, fireworkSize*2)
+            c.rect(nonExplodedParticles[i].x-(nonExplodedParticles[i].fireworkSize), nonExplodedParticles[i].y-(nonExplodedParticles[i].fireworkSize), nonExplodedParticles[i].fireworkSize*2, nonExplodedParticles[i].fireworkSize*2)
             c.fillStyle = "white"
             c.fill()
             c.closePath()
@@ -472,7 +474,7 @@ function frame(){
 
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.drawImage(frozenCanvas, 0, 0);
-    if(Math.floor(Math.random()*150) == 1 && (totalRendered <= lengthOfOriginalArray*0.999)){
+    if(Math.floor(Math.random()*45) == 1 && (totalRendered <= lengthOfOriginalArray*0.9999)){
         initParticle();
     } else if (totalRendered >= lengthOfOriginalArray && deathParticles.length == 0) {
         //finishedRender = true

@@ -4,7 +4,7 @@ import math
 import sys
 
 # Load the image
-img = Image.open('C://Users//mchlc//Downloads//allison_sunset_l_lighter.png')
+img = Image.open('C://Users//mchlc//Downloads//allison_sunset_FINAL.png')
 
 # Convert to a NumPy array (grayscaled or RGB)
 # For grayscale:
