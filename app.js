@@ -1,7 +1,7 @@
 const canvas = document.getElementById("myCanvas");
 const c = canvas.getContext("2d");
 
-const globalFireworkTrailLength = 100
+const globalFireworkTrailLength = 40
 const colorKeyListBackup = [...colorKeyList]
 // check this out
 
@@ -60,7 +60,7 @@ const inputHeight = input.length
 
 // frame for HAPPY FATHER'S DAY! is 171 (width) x 24 (height).
 
-let maximumArtHeight = 0.9
+let maximumArtHeight = 0.8
 let maximumArtWidth = 1.0
 
 let textFrameHeight;
@@ -105,6 +105,11 @@ function determineDistXPos(rand) {
     } else {
         return 0.5 * Math.tan((Math.PI * rand) + (Math.PI / 2))
     }
+}
+
+function generateBimodalXPos() {
+    let rand = Math.random();
+    return 1.2 * Math.atan((2*rand) - 1)
 }
 
 
@@ -155,18 +160,11 @@ function explode(x, y, size, numParticles, localFireworkSize){
 
             // if we're doing bottom-up
             
-            let index = Math.floor(translatedX + (variationX * (inputWidth / 6)))
+            let index = Math.floor(translatedX + (variationX * (inputWidth / 6.5)))
             
-            if (index < 0) {
-                index = 0
-            } else if (index > inputWidth-1) { 
-                index = inputWidth-1
-            }
-
-            if (index >= potentialCoords.length) {
+            if (index < 0 || index > inputWidth-1 || index >= potentialCoords.length) {
                 index = Math.floor(Math.random()*potentialCoords.length)
-            }
-
+            } 
             targetGridX = potentialCoords[index].x
             targetGridY = potentialCoords[index].y
 
@@ -374,25 +372,33 @@ function drawDeathParticles(){
 }
 
 function initParticle(){
-    let randomX = Math.round(Math.random()*(textFrameWidth*0.8))+textFrameLocX+(textFrameWidth*0.1)
-    let nParticles = 600 + (Math.random() * 600)
-    let expSize = nParticles / 700
+    let randomX = (((generateBimodalXPos() + 1) / 2) * textFrameWidth) + textFrameLocX
+    
+    // Math.round(Math.random()*(textFrameWidth*0.8))+textFrameLocX+(textFrameWidth*0.1)
+    let nParticles = 800 + (Math.random() * 500)
+    let expSize = (nParticles / 1000)
     let localFireworkSize = globalFireworkSize * expSize
-    let localTrailLength = globalFireworkTrailLength * Math.pow(expSize, 1.5)
+    let localTrailLength = globalFireworkTrailLength * Math.pow(expSize, 2)
+    const attenuation = (totalOnGrid/lengthOfOriginalArray)
     // let randomX = Math.round(Math.random()*window.innerWidth)+0
     if(Math.round(Math.random()) == 1){
         //default fireworks
-        nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: 0-((Math.random()*3)+4.5)*(window.innerHeight/defaultHeight), type: "default", trail: [], expSize: expSize, numParticles: nParticles, fireworkSize: localFireworkSize, fireworkTrailLength: localTrailLength})
+
+        const initGravity = 0 - ((Math.random()*(3 - attenuation))+6.5)*(window.innerHeight/defaultHeight) - (attenuation * 1.5)
+        
+        nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: initGravity, type: "default", trail: [], expSize: expSize, numParticles: nParticles, fireworkSize: localFireworkSize, fireworkTrailLength: localTrailLength})
+
     }else{
         //curvy fireworks
         
         //let randomX = Math.round(Math.random()*window.innerWidth)+0
         let amplitude = ((Math.random()*40)+10)*(window.innerHeight/defaultHeight)
-        let initGravity = 0-((Math.random()*4)+4)*(window.innerHeight/defaultHeight)
-        let frequency = Math.round(Math.random()*6)+3
+        const initGravity = 0 - ((Math.random()*(3.5 - attenuation))+6)*(window.innerHeight/defaultHeight) - (attenuation * 1.5)
+
+        let frequency = Math.round(Math.random()*7)+5
         nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: initGravity, amplitude: amplitude, type: "curvy", loop: 0, referenceX: randomX, freq: frequency, trail: [], expSize: expSize, numParticles: nParticles, fireworkSize: localFireworkSize, fireworkTrailLength: localTrailLength})
 
-        if (Math.random() < 0.25) {
+        if (Math.random() < 0.125) {
             nonExplodedParticles.push({x: randomX, y: window.innerHeight, initGravity: initGravity, amplitude: 0-amplitude, type: "curvy", loop: 0, referenceX: randomX, freq: frequency, trail: [], expSize: expSize, numParticles: nParticles, fireworkSize: localFireworkSize, fireworkTrailLength: localTrailLength})
         }
     }
@@ -401,16 +407,16 @@ function initParticle(){
 function updateInitParticle(){
     let i=0;
     while(i < nonExplodedParticles.length){
-        if(nonExplodedParticles[i].initGravity < -0.8){
+        if(nonExplodedParticles[i].initGravity < -1){
             if(nonExplodedParticles[i].type == "default"){
                 //runs if default
                 
                 nonExplodedParticles[i].y += nonExplodedParticles[i].initGravity
-                nonExplodedParticles[i].initGravity += 0.05
+                nonExplodedParticles[i].initGravity += 0.085
             }else{
                 //runs if curvy
                 nonExplodedParticles[i].y += nonExplodedParticles[i].initGravity
-                nonExplodedParticles[i].initGravity += 0.05;
+                nonExplodedParticles[i].initGravity += 0.085;
                 nonExplodedParticles[i].x = nonExplodedParticles[i].referenceX + (nonExplodedParticles[i].amplitude)*Math.sin((nonExplodedParticles[i].loop*nonExplodedParticles[i].freq)*(Math.PI/180));
                 nonExplodedParticles[i].loop++;
             }
@@ -474,7 +480,7 @@ function frame(){
 
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.drawImage(frozenCanvas, 0, 0);
-    if(Math.floor(Math.random()*45) == 1 && (totalRendered <= lengthOfOriginalArray*0.9999)){
+    if(Math.floor(Math.random()*40) == 1 && (totalRendered <= lengthOfOriginalArray*0.9999)){
         initParticle();
     } else if (totalRendered >= lengthOfOriginalArray && deathParticles.length == 0) {
         //finishedRender = true
@@ -535,19 +541,21 @@ function frame(){
     c.textAlign = "left";
     c.beginPath()
 
-
+    c.fillStyle = "white"
     c.fillText("On Grid: " + totalOnGrid + "/" + lengthOfOriginalArray + " (" + (((totalOnGrid)/lengthOfOriginalArray)*100).toFixed(2) + "%)", 10, 25);
 
     // outer rectangle
-    c.strokeRect(10, 35, 200, 15)
+    c.strokeRect(10, 35, 250, 20)
 
-    c.fillStyle="#2469d6"
+    c.fillStyle="orange"
 
-    c.fillRect(10, 35, 200*(((totalOnGrid)/lengthOfOriginalArray)), 15)
+    c.fillRect(10, 35, 250*(((totalOnGrid)/lengthOfOriginalArray)), 20)
 
-    c.fillStyle = "white"
+    c.fillStyle = "black"
+    c.textAlign = "center"
+    c.fillText("A cute fly is watching this :)", 135, 50);
 
-    c.fillText("Unique colors left: " + colorKeyList.length, 10, 65);
+    // c.fillText("Unique colors left: " + colorKeyList.length, 10, 65);
     c.closePath()
 
     drawInitParticle()
@@ -557,7 +565,23 @@ function frame(){
     updateDeathParticles()
 }
 
-var interval = setInterval(frame, 10);
+//var interval = setInterval(frame, 10);
+let lastTime = 0
+let lostFrames = 0
+function animate(timestamp) {
+
+    frame()
+
+    requestAnimationFrame(animate);
+}
+
+function startAnimation () {
+    document.getElementById("preAnimation").style.display = "none"
+    document.getElementById("myCanvas").style.display = "block"
+    requestAnimationFrame(animate);
+}
+
+
 
 // for debugging
 function DEBUG_ORIGINAL() {
